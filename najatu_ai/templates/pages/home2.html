@@ -1,0 +1,363 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naja'atu.ai</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        :root {
+            --cyber-blue: #0a192f;
+            --neon-cyan: #00f3ff;
+            --cyber-purple: #6c63ff;
+            --gradient: linear-gradient(45deg, #6c63ff, #00f3ff);
+        }
+
+        body {
+            background-color: var(--cyber-blue);
+            color: white;
+            line-height: 1.6;
+        }
+
+        .hero {
+            height: 110vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: url("{% static 'images/1.jpeg' %}");
+            animation: glow 20s linear infinite;
+            opacity: 0.4;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease;
+            background: linear-gradient(45deg, #fff, var(--neon-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .email-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 2rem;
+            border-radius: 15px;
+            border: 2px solid rgba(108, 99, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            margin: 2rem 0;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .cta-button {
+            padding: 1.2rem 3rem;
+            border: none;
+            border-radius: 50px;
+            background: var(--gradient);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(108, 99, 255, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 40px rgba(108, 99, 255, 0.5);
+        }
+
+        .results-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            display: none;
+            border: 1px solid rgba(108, 99, 255, 0.3);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            padding: 4rem 2rem;
+        }
+
+        .step-card {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .step-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--neon-cyan);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 1rem;
+        }
+
+        .result-title {
+            margin-bottom: 1.5rem;
+            color: var(--neon-cyan);
+        }
+
+        .result-content {
+            white-space: pre-wrap;
+            font-family: monospace;
+            line-height: 1.8;
+            position: relative;
+        }
+
+        .typing-cursor {
+            animation: blink 1s infinite;
+            color: var(--neon-cyan);
+        }
+
+        .error {
+            color: #ff4444;
+            padding: 1rem;
+        }
+
+        @keyframes glow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                padding: 1rem;
+            }
+        }
+
+        .loading-bar {
+    width: 200px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 20px auto;
+}
+
+.loading-progress {
+    width: 0;
+    height: 100%;
+    background: var(--gradient);
+    animation: loading 1s ease-in-out infinite;
+}
+
+@keyframes loading {
+    0% { width: 0; margin-left: 0; }
+    50% { width: 100%; margin-left: 0; }
+    100% { width: 0; margin-left: 100%; }
+}
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Protect Your Emails with AI-Powered Phishing Detection</h1>
+            <textarea 
+                class="email-input" 
+                placeholder="Paste email content here for AI analysis..."
+            ></textarea>
+            <button class="cta-button" onclick="scanEmail()">Scan Email Now</button>
+            <div class="results-card"></div>
+        </div>
+    </section>
+
+    <section class="steps">
+        <div class="step-card">
+            <h3>1. Paste Email</h3>
+            <p>Copy and paste suspicious email content into our analyzer</p>
+        </div>
+        <div class="step-card">
+            <h3>2. AI Analysis</h3>
+            <p>Our neural network scans for phishing patterns in real-time</p>
+        </div>
+        <div class="step-card">
+            <h3>3. Get Results</h3>
+            <p>Instant threat assessment with actionable recommendations</p>
+        </div>
+    </section>
+
+    <script>
+        const API_URL = '{% url 'users:analyze_email' %}'; // Django's URL for the JSON view
+
+async function analyzeEmail(content) {
+    const resultsCard = document.querySelector('.results-card');
+    resultsCard.innerHTML = `
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+            <p>Analyzing with AI...</p>
+        </div>
+    `;
+    resultsCard.style.display = 'block';
+
+    try {
+        // Send the email content to the backend
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // Include CSRF token for security
+            },
+            body: JSON.stringify({ emailContent: content })
+        });
+
+        // Parse the JSON response
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.error || 'Analysis failed');
+
+        // Format the result text
+        const resultText = `Phishing Probability: ${result.score}%
+Confidence Level: ${result.confidence}%
+${result.details}
+Conclusion: ${result.isPhishing ? '⚠️ Likely Phishing Attempt' : '✅ Appears Safe'}`;
+
+        // Display the result with typing animation
+        resultsCard.innerHTML = `
+            <h3 class="result-title">Analysis Result:</h3>
+            <div class="result-content"></div>
+        `;
+        typeText(resultText, document.querySelector('.result-content'));
+
+    } catch (error) {
+        resultsCard.innerHTML = `
+            <div class="error">
+                ❌ Error analyzing email: ${error.message}
+            </div>
+        `;
+    }
+}
+
+function typeText(text, element) {
+    let index = 0;
+    element.innerHTML = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'typing-cursor';
+    cursor.textContent = '|';
+    element.appendChild(cursor);
+
+    const interval = setInterval(() => {
+        if (index >= text.length) {
+            clearInterval(interval);
+            cursor.style.display = 'none';
+            return;
+        }
+        const char = text.charAt(index);
+        const span = document.createElement('span');
+        span.textContent = char;
+        element.insertBefore(span, cursor);
+        index++;
+    }, 30); // Typing speed
+}
+
+async function scanEmail() {
+    const emailContent = document.querySelector('.email-input').value.trim();
+    const button = document.querySelector('.cta-button');
+
+    if (!emailContent) {
+        alert('Please paste an email to analyze');
+        return;
+    }
+
+    button.disabled = true;
+    button.innerHTML = 'Scanning...';
+
+    try {
+        await analyzeEmail(emailContent);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = 'Scan Email Now';
+    }
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+    </script>
+</body>
+</html>
