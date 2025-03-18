@@ -52,8 +52,6 @@ user_redirect_view = UserRedirectView.as_view()
 
 
 
-
-# Load the phishing detection model (once during app startup)
 phishing_detector = pipeline(
     "text-classification",
     model="dima806/phishing-email-detection",
@@ -61,53 +59,49 @@ phishing_detector = pipeline(
 )
 
 
-@csrf_exempt  # Temporarily disable CSRF protection for testing (remove in production)
+@csrf_exempt  
 def analyze_email(request):
     if request.method == 'POST':
         try:
-            # Parse the incoming JSON data
+            
             body = json.loads(request.body)
             email_content = body.get('emailContent', '').strip()
 
-            # Validate input
+            
             if not email_content:
                 return JsonResponse({'error': 'Email content is required'}, status=400)
 
-            # Analyze the email content using the phishing detector
+            
             result = phishing_detector(email_content)[0]
 
-            # Extract details from the model's output
-            raw_label = result.get('label', '').upper()  # Raw label from the model
-            score = result.get('score', 0)  # Default to 0 if score is missing
+            raw_label = result.get('label', '').upper() 
+            score = result.get('score', 0)  
 
-            # Normalize the label for consistency
+            
             label_mapping = {
                 "PHISHING EMAIL": "PHISHING EMAIL",
-                "SAVE EMAIL": "SAFE EMAIL"  # Map "SAVE EMAIL" to "SAFE EMAIL"
+                "SAVE EMAIL": "SAFE EMAIL"  
             }
-            normalized_label = label_mapping.get(raw_label, "UNKNOWN")  # Default to "UNKNOWN" if label is unrecognized
+            normalized_label = label_mapping.get(raw_label, "UNKNOWN")  
 
-            # Determine if the email is phishing
+        
             is_phishing = normalized_label == "PHISHING EMAIL"
 
-            # Prepare the response
+            
             prediction = {
-                'score': round(score * 100, 2),  # Convert score to percentage
-                'confidence': round(score * 100, 2),  # Confidence is the same as score
-                'details': f"Label: {normalized_label}",  # Use the normalized label
-                'isPhishing': is_phishing  # Boolean indicating if it's phishing
+                'score': round(score * 100, 2),  
+                'confidence': round(score * 100, 2),  
+                'details': f"Label: {normalized_label}",  
+                'isPhishing': is_phishing  
             }
 
-            # Debugging: Print the prediction to the console
-            print(prediction)
 
-            # Return the JSON response
             return JsonResponse(prediction)
 
         except Exception as e:
-            # Log the exception for debugging purposes
+        
             print(f"Error during analysis: {str(e)}")
             return JsonResponse({'error': 'An error occurred while analyzing the email'}, status=500)
 
-    # Handle invalid request methods
+
     return JsonResponse({'error': 'Invalid request method'}, status=405)
