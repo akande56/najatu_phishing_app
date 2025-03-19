@@ -11,6 +11,7 @@ django-allauth
 django-crispy-forms
 django-debug-toolbar
 django-environ
+django-redis
 django-extensions
 fido2
 filelock
@@ -42,3 +43,5 @@ typing_extensions
 urllib3
 whitenoise
 gunicorn
+django-allauth[mfa]
+django-anymail
