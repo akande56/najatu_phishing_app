@@ -45,3 +45,5 @@ whitenoise
 gunicorn
 django-allauth[mfa]
 django-anymail
+bitsandbytes
+accelerate
