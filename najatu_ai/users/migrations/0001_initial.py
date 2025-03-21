@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "id",
-                    models.BigAutoField(
+                    models.IntegerField(
                         auto_created=True,
                         primary_key=True,
                         serialize=False,
