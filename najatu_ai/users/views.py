@@ -1,3 +1,4 @@
+import os
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import QuerySet
@@ -12,9 +13,9 @@ from najatu_ai.users.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
-import torch
-import torch.nn as nn
+from huggingface_hub import InferenceClient
+
+
 
 class UserDetailView(LoginRequiredMixin, DetailView):
     model = User
@@ -52,55 +53,59 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
 user_redirect_view = UserRedirectView.as_view()
 
 
+# views.py
+import json
+import requests
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
-# Load the pre-trained model
-model = AutoModelForSequenceClassification.from_pretrained("dima806/phishing-email-detection")
+API_URL = os.getenv("API_URL")
+HEADERS = {
+    "Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}", 
+    "Content-Type": "application/json"
+}
 
-# Apply dynamic quantization (CPU-only)
-model = torch.quantization.quantize_dynamic(
-    model, 
-    {nn.Linear},  # Quantize all linear layers
-    dtype=torch.qint8  # 8-bit integer precision
-)
 
-# Move model to CPU explicitly
-device = torch.device("cpu")
-model.to(device)
-model.eval()
-
-# Initialize tokenizer
-tokenizer = AutoTokenizer.from_pretrained("dima806/phishing-email-detection")
-
-# Initialize pipeline (optional, but ensures compatibility)
-phishing_detector = pipeline(
-    "text-classification",
-    model=model,
-    tokenizer=tokenizer,
-    device=device  # Explicitly use CPU
-)
 
 
 @csrf_exempt  
 def analyze_email(request):
     if request.method == 'POST':
         try:
+            # Parse the incoming JSON request
             body = json.loads(request.body)
             email_content = body.get('emailContent', '').strip()
 
             if not email_content:
                 return JsonResponse({'error': 'Email content is required'}, status=400)
 
-            # Disable gradient calculation to save memory
-            with torch.no_grad():
-                result = phishing_detector(email_content)[0]
+            # Send the email content to the Hugging Face API
+            payload = {"inputs": email_content}
+            response = requests.post(API_URL, headers=HEADERS, json=payload)
 
-            # Process results (same as before)
-            raw_label = result.get('label', '').upper()
-            score = result.get('score', 0)
+            # Check if the API request was successful
+            if response.status_code != 200:
+                return JsonResponse({'error': 'Failed to analyze email'}, status=500)
+
+            # Parse the API response
+            result = response.json()  # This is a nested list: [[{'label': ..., 'score': ...}, {...}]]
+            
+            # Ensure the response is in the expected format
+            if not isinstance(result, list) or len(result) == 0 or not isinstance(result[0], list):
+                return JsonResponse({'error': 'Unexpected API response format'}, status=500)
+
+            # Extract the top prediction
+            predictions = result[0]  # Get the inner list of predictions
+            top_result = predictions[0]  # Get the most likely label
+            raw_label = top_result.get('label', '').upper()
+            score = top_result.get('score', 0)
+
+            # Map labels to user-friendly names
             label_mapping = {"PHISHING EMAIL": "PHISHING EMAIL", "SAFE EMAIL": "SAFE EMAIL"}
             normalized_label = label_mapping.get(raw_label, "UNKNOWN")
             is_phishing = normalized_label == "PHISHING EMAIL"
 
+            # Prepare the response
             prediction = {
                 'score': round(score * 100, 2),
                 'confidence': round(score * 100, 2),
@@ -112,6 +117,6 @@ def analyze_email(request):
 
         except Exception as e:
             print(f"Error during analysis: {str(e)}")
-            return JsonResponse({'error': 'An error occurred'}, status=500)
+            return JsonResponse({'error': 'An error occurred while analyzing the email'}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
