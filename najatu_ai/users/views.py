@@ -13,7 +13,7 @@ from najatu_ai.users.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from huggingface_hub import InferenceClient
+import requests
 
 
 
@@ -53,11 +53,6 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
 user_redirect_view = UserRedirectView.as_view()
 
 
-# views.py
-import json
-import requests
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 API_URL = os.getenv("API_URL")
 HEADERS = {
